@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pakistan Prize Box | اپنا علم آزمائیں، انعام جیتیں</title>
+    <meta name="description" content="Legitimate daily quiz and prize platform for Pakistan. Test your knowledge and win.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-black: #0A0A0A;
+            --card-gray: #1A1A1A;
+            --green-primary: #00C853;
+            --gold-accent: #F0B90B;
+            --text-white: #FFFFFF;
+            --text-muted: #AAAAAA;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', 'Noto Nastaliq Urdu', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Utils */
+        .rtl { direction: rtl; font-family: 'Noto Nastaliq Urdu', serif; }
+        .hidden { display: none !important; }
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .btn {
+            display: flex; align-items: center; justify-content: center;
+            padding: 15px 25px; border-radius: 12px; border: none;
+            font-weight: 700; cursor: pointer; transition: var(--transition);
+            width: 100%; font-size: 16px; margin: 10px 0;
+            text-transform: uppercase;
+        }
+        .btn-green { background: var(--green-primary); color: white; }
+        .btn-gold { background: var(--gold-accent); color: black; height: 60px; font-size: 18px; }
+        .btn-outline { background: transparent; border: 2px solid var(--green-primary); color: var(--green-primary); }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 185, 11, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(240, 185, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 185, 11, 0); }
+        }
+        .pulse { animation: pulse 2s infinite; }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        .shake { animation: shake 0.5s infinite; }
+
+        /* Header */
+        header {
+            background: var(--card-gray);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        .logo { font-weight: 800; font-size: 1.2rem; color: var(--green-primary); }
+        .points-display {
+            background: rgba(240, 185, 11, 0.1);
+            color: var(--gold-accent);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            border: 1px solid var(--gold-accent);
+        }
+
+        /* Hamburger Menu */
+        .menu-btn { font-size: 24px; cursor: pointer; }
+        .side-menu {
+            position: fixed; top: 0; right: -100%; width: 80%; height: 100%;
+            background: var(--card-gray); z-index: 2000; transition: 0.4s;
+            padding: 60px 20px;
+        }
+        .side-menu.active { right: 0; }
+        .menu-item {
+            padding: 15px; border-bottom: 1px solid #333;
+            color: white; text-decoration: none; display: block; font-size: 18px;
+        }
+        .overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); display:none; z-index: 1500;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;
+        }
+        .stat-card {
+            background: var(--card-gray); padding: 15px; border-radius: 15px;
+            text-align: center; border: 1px solid #333;
+        }
+        .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-card p { font-size: 1.2rem; font-weight: 700; color: var(--gold-accent); }
+
+        /* Progress Bar */
+        .progress-container { background: #333; height: 12px; border-radius: 6px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { background: var(--gold-accent); height: 100%; width: 0%; transition: 1s; }
+
+        /* Ad Slots */
+        .ad-slot {
+            background: #111; border: 1px dashed #444; margin: 20px 0;
+            padding: 10px; text-align: center; font-size: 10px; color: #555;
+            min-height: 90px; display: flex; flex-direction: column; justify-content: center;
+        }
+
+        /* Quiz Page */
+        #quiz-card { background: var(--card-gray); padding: 25px; border-radius: 20px; position: relative; }
+        #timer-bar { height: 5px; background: var(--green-primary); width: 100%; position: absolute; top: 0; left: 0; border-radius: 20px 20px 0 0; }
+        .option-btn {
+            background: #2a2a2a; border: 1px solid #444; color: white;
+            padding: 15px; border-radius: 10px; margin: 10px 0; width: 100%;
+            text-align: right; font-size: 18px; cursor: pointer; transition: 0.2s;
+        }
+        .option-btn:active { transform: scale(0.98); }
+        .correct { background: var(--green-primary) !important; border-color: white !important; }
+        .wrong { background: #ff4444 !important; border-color: white !important; }
+
+        /* Box Opening */
+        .prize-box-container { text-align: center; padding: 40px 0; }
+        #box-img { font-size: 100px; display: inline-block; transition: 0.5s; cursor: pointer; }
+        .glow { filter: drop-shadow(0 0 20px var(--gold-accent)); }
+
+        /* Leaderboard */
+        .leaderboard-item {
+            display: flex; justify-content: space-between; padding: 12px;
+            background: #111; margin-bottom: 8px; border-radius: 8px; align-items: center;
+        }
+        .rank { width: 30px; font-weight: bold; color: var(--green-primary); }
+
+        /* Footer */
+        footer { background: #000; padding: 40px 20px; text-align: center; margin-top: 50px; border-top: 1px solid #222; }
+        .footer-links { margin-bottom: 20px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 10px; font-size: 14px; }
+
+        /* Toasts */
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--green-primary); color: white; padding: 12px 25px;
+            border-radius: 30px; z-index: 3000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* FAQ */
+        .faq-item { background: #1a1a1a; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
+        .faq-q { padding: 15px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; }
+        .faq-a { padding: 0 15px 15px; color: #ccc; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Message here</div>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <header>
+        <div class="menu-btn" onclick="toggleMenu()">☰</div>
+        <div class="logo" onclick="showPage('home')">PK Prize Box</div>
+        <div class="points-display">⭐ <span id="header-points">0</span></div>
+    </header>
+
+    <div class="side-menu" id="side-menu">
+        <div style="text-align: right; padding-bottom: 20px;">
+            <button class="btn btn-outline" style="width: auto;" onclick="toggleLanguage()" id="lang-toggle">اردو</button>
+        </div>
+        <a href="#" class="menu-item" onclick="showPage('home')">🏠 <span data-key="nav-home">Home</span></a>
+        <a href="#" class="menu-item" onclick="showPage('quiz')">📝 <span data-key="nav-quiz">Daily Quiz</span></a>
+        <a href="#" class="menu-item" onclick="showPage('box')">🎁 <span data-key="nav-box">Prize Box</span></a>
+        <a href="#" class="menu-item" onclick="showPage('leaderboard')">🏆 <span data-key="nav-leader">Leaderboard</span></a>
+        <a href="#" class="menu-item" onclick="showPage('referral')">👥 <span data-key="nav-refer">Refer & Earn</span></a>
+        <a href="#" class="menu-item" onclick="showPage('withdraw')">💰 <span data-key="nav-withdraw">Withdraw</span></a>
+        <a href="#" class="menu-item" onclick="showPage('history')">📜 <span data-key="nav-history">History</span></a>
+        <a href="#" class="menu-item" onclick="showPage('faq')">❓ <span data-key="nav-faq">FAQ</span></a>
+        <a href="#" class="menu-item" onclick="showPage('about')">ℹ️ <span data-key="nav-about">About</span></a>
+    </div>
+
+    <!-- PAGE: HOME -->
+    <main id="page-home" class="container page">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 1.8rem;" data-key="hero-title">Pakistan Prize Box</h1>
+            <p style="color: var(--gold-accent);" data-key="hero-subtitle">Apna Ilm Azmao, Inaam Jeeto!</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 data-key="stat-points">Your Points</h3>
+                <p id="stat-p">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 data-key="stat-boxes">Boxes Avail.</h3>
+                <p id="stat-b">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 data-key="stat-won">Total Won</h3>
+                <p>$<span id="stat-w">0.00</span></p>
+            </div>
+            <div class="stat-card">
+                <h3 data-key="stat-rank">Today's Rank</h3>
+                <p>#<span id="stat-r">--</span></p>
+            </div>
+        </div>
+
+        <div id="box-progress-section">
+            <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span data-key="box-progress-text">Next Prize Box Progress</span>
+                <span><span id="prog-val">0</span>/200</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="prog-bar"></div>
+            </div>
+        </div>
+
+        <button id="main-box-btn" class="btn btn-gold pulse hidden" onclick="showPage('box')">
+            🎁 <span data-key="open-box-btn">OPEN PRIZE BOX</span>
+        </button>
+
+        <div class="ad-slot">
+            SPONSORED AD
+            <div style="font-size: 12px; color: #888;">728 x 90 Banner Space</div>
+        </div>
+
+        <div class="stat-card" style="margin-top: 20px; cursor: pointer;" onclick="showPage('quiz')">
+            <h2 style="color: var(--green-primary); margin-bottom: 10px;" data-key="quiz-title">Daily Quiz</h2>
+            <p data-key="quiz-status-text">Questions Completed: <span id="quiz-done">0</span>/10</p>
+            <button class="btn btn-green" data-key="start-quiz">Start Earning</button>
+        </div>
+
+        <div class="stat-card" style="margin-top: 20px; background: linear-gradient(45deg, #1A1A1A, #222);">
+            <h3 data-key="refer-box-title">Invite & Earn</h3>
+            <p style="font-size: 14px; margin: 10px 0;" data-key="refer-box-desc">Earn 25 points for every friend who joins!</p>
+            <button class="btn btn-outline" onclick="showPage('referral')" data-key="refer-box-btn">Invite Friends</button>
+        </div>
+    </main>
+
+    <!-- PAGE: QUIZ -->
+    <main id="page-quiz" class="container page hidden">
+        <div id="quiz-intro">
+            <h2 data-key="quiz-h">Daily Knowledge Quiz</h2>
+            <p style="margin-bottom: 20px;" data-key="quiz-p">Answer 10 questions correctly to earn points. Each correct answer gives 5 points.</p>
+            <div id="quiz-limit-msg" class="hidden" style="color: #ff4444; margin-bottom: 20px; font-weight: bold;">
+                You have reached your daily limit. Come back tomorrow!
+            </div>
+            <button class="btn btn-green" id="start-q-btn" onclick="startQuiz()">Start Quiz</button>
+        </div>
+
+        <div id="quiz-play" class="hidden">
+            <div id="quiz-card">
+                <div id="timer-bar"></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span id="q-count">Question 1/10</span>
+                    <span id="timer-text">15s</span>
+                </div>
+                <h3 id="q-text" class="rtl" style="font-size: 22px; margin-bottom: 25px; line-height: 1.5;">Question text here?</h3>
+                <div id="options-container">
+                    <!-- Options injected here -->
+                </div>
+            </div>
+            <div class="ad-slot">SPONSORED - Support Us</div>
+        </div>
+
+        <div id="quiz-result" class="hidden" style="text-align: center;">
+            <h2 data-key="well-done">Quiz Completed!</h2>
+            <div style="font-size: 60px; margin: 20px 0;">🎯</div>
+            <p style="font-size: 24px;"><span data-key="score">Score</span>: <span id="final-score">0</span>/10</p>
+            <p style="color: var(--gold-accent); font-weight: bold;">+ <span id="earned-pts">0</span> Points Earned</p>
+            <button class="btn btn-green" onclick="showPage('home')">Back to Home</button>
+        </div>
+    </main>
+
+    <!-- PAGE: PRIZE BOX -->
+    <main id="page-box" class="container page hidden">
+        <h2 style="text-align: center;" data-key="box-h">Your Prize Box</h2>
+        <div class="prize-box-container">
+            <div id="box-img" onclick="openBoxLogic()">🎁</div>
+            <div id="box-instruction" style="margin-top: 20px; font-weight: bold;" data-key="box-tap">Tap the box to open!</div>
+        </div>
+        <div id="box-result" class="hidden" style="text-align: center; animation: fadeIn 1s;">
+            <h2 style="color: var(--gold-accent);" data-key="congrats">Congratulations!</h2>
+            <p style="font-size: 20px;" data-key="you-won">You have won</p>
+            <div style="font-size: 40px; font-weight: 800; margin: 15px 0;">$<span id="win-amount">0.00</span></div>
+            <button class="btn btn-green" onclick="showPage('home')">Claim to Wallet</button>
+        </div>
+    </main>
+
+    <!-- PAGE: WITHDRAW -->
+    <main id="page-withdraw" class="container page hidden">
+        <h2 data-key="withdraw-h">Withdraw Funds</h2>
+        <div class="stat-card" style="margin: 20px 0;">
+            <h3 data-key="curr-bal">Available Balance</h3>
+            <p style="font-size: 2.5rem;">$<span id="draw-bal">0.00</span></p>
+        </div>
+
+        <div id="withdraw-locked">
+            <div style="background: rgba(255,68,68,0.1); padding: 20px; border-radius: 12px; border: 1px solid #ff4444;">
+                <p data-key="withdraw-lock-msg">⚠️ Withdrawal is locked. Requirements:</p>
+                <ul style="margin-left: 20px; margin-top: 10px; text-align: left;">
+                    <li id="req-refer">5 Successful Referrals (Current: 0)</li>
+                    <li id="req-money">Minimum $30.00 Balance</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="withdraw-unlocked" class="hidden">
+            <label data-key="w-method">Select Method</label>
+            <select class="option-btn" id="w-method-select" style="text-align: left;">
+                <option>JazzCash</option>
+                <option>EasyPaisa</option>
+                <option>Bank Transfer</option>
+            </select>
+            <label data-key="w-account">Account Number / IBAN</label>
+            <input type="text" class="option-btn" placeholder="03XXXXXXXXX" style="text-align: left;" id="w-account-input">
+            <button class="btn btn-green" onclick="processWithdrawal()" data-key="w-submit">Submit Withdrawal</button>
+        </div>
+    </main>
+
+    <!-- PAGE: REFERRAL -->
+    <main id="page-referral" class="container page hidden">
+        <h2 data-key="refer-h">Refer & Earn</h2>
+        <p data-key="refer-p">Share your code with friends. When they join, you get 25 points and they get 10!</p>
+        
+        <div class="stat-card" style="margin: 30px 0; border: 2px dashed var(--gold-accent);">
+            <h3 data-key="your-code">Your Referral Code</h3>
+            <p id="my-code" style="font-size: 2rem; letter-spacing: 5px; color: white;">PK-8829</p>
+            <button class="btn btn-outline" style="width: auto; margin-top: 10px;" onclick="copyReferral()" data-key="copy-btn">Copy Code</button>
+        </div>
+
+        <button class="btn btn-green" onclick="shareWhatsApp()">Share on WhatsApp</button>
+        
+        <div style="margin-top: 30px;">
+            <h3 data-key="refer-stats">Your Referrals: <span id="refer-count">0</span></h3>
+        </div>
+    </main>
+
+    <!-- PAGE: LEADERBOARD -->
+    <main id="page-leaderboard" class="container page hidden">
+        <h2 data-key="leader-h">Top Earners</h2>
+        <div id="leaderboard-list" style="margin-top: 20px;">
+            <!-- List injected here -->
+        </div>
+    </main>
+
+    <!-- LEGAL PAGES -->
+    <main id="page-faq" class="container page hidden">
+        <h2 data-key="faq-h">Frequently Asked Questions</h2>
+        <div id="faq-container" style="margin-top: 20px;"></div>
+    </main>
+
+    <main id="page-about" class="container page hidden">
+        <h2 data-key="about-h">About Pakistan Prize Box</h2>
+        <div class="stat-card" style="text-align: left; margin-top: 20px;">
+            <p data-key="about-p1">Pakistan Prize Box is a premier knowledge-based platform designed specifically for the people of Pakistan. Our mission is to promote learning and general knowledge through an engaging and rewarding experience.</p>
+            <br>
+            <p data-key="about-p2">Users can participate in daily quizzes covering topics from Islamic history to Science and Sports. By answering correctly, users earn points that can be used to unlock virtual prize boxes containing real rewards.</p>
+            <br>
+            <p data-key="about-p3">We are 100% free to use. We do not support or host any form of gambling. All rewards are funded through our advertising partners.</p>
+        </div>
+    </main>
+
+    <main id="page-history" class="container page hidden">
+        <h2 data-key="history-h">Points History</h2>
+        <div id="history-list" style="margin-top: 20px;"></div>
+    </main>
+
+    <footer id="footer">
+        <div class="footer-links">
+            <a href="#" onclick="showPage('about')">About</a> | 
+            <a href="#" onclick="showPage('faq')">FAQ</a> | 
+            <a href="#" onclick="showPage('privacy')">Privacy Policy</a>
+        </div>
+        <div class="ad-slot">SPONSORED</div>
+        <p style="font-size: 12px; color: #666;">&copy; 2025 Pakistan Prize Box. All Rights Reserved.</p>
+        <p style="font-size: 10px; color: #444; margin-top: 10px;">Disclaimer: This app is for educational purposes. Points and prizes are subject to terms and conditions.</p>
+    </footer>
+
+    <script>
+        // --- DATA & STATE ---
+        const QUESTIONS = [
+            {q: "پاکستان کا دارالحکومت کیا ہے؟", o: ["کراچی", "اسلام آباد", "لاہور", "پشاور"], a: 1},
+            {q: "پاکستان کی قومی زبان کیا ہے؟", o: ["سندھی", "پنجابی", "اردو", "پشتو"], a: 2},
+            {q: "پاکستان کا سب سے بڑا صوبہ رقبے کے لحاظ سے کون سا ہے؟", o: ["پنجاب", "بلوچستان", "سندھ", "خیبر پختونخوا"], a: 1},
+            {q: "پاکستان کی کرنسی کا نام کیا ہے؟", o: ["ڈالر", "روپیہ", "ریال", "دینار"], a: 1},
+            {q: "پاکستان کا یوم آزادی کب منایا جاتا ہے؟", o: ["14 اگست", "23 مارچ", "6 ستمبر", "25 دسمبر"], a: 0},
+            {q: "قائد اعظم کا مزار کہاں ہے؟", o: ["لاہور", "اسلام آباد", "کراچی", "کوئٹہ"], a: 2},
+            {q: "پاکستان کی سب سے بڑی جھیل کون سی ہے؟", o: ["سیف الملوک", "ہنہ جھیل", "منچھر جھیل", "کچورا جھیل"], a: 2},
+            {q: "پاکستان کا سب سے بڑا شہر کون سا ہے؟", o: ["لاہور", "فیصل آباد", "کراچی", "راولپنڈی"], a: 2},
+            {q: "پاکستان کا قومی کھیل کیا ہے؟", o: ["کرکٹ", "ہاکی", "فٹ بال", "کبڈی"], a: 1},
+            {q: "پاکستان کا سب سے اونچا پہاڑ کون سا ہے؟", o: ["ناگا پربت", "کے ٹو", "راکاپوشی", "ماؤنٹ ایورسٹ"], a: 1},
+            {q: "پاکستان کے پہلے وزیراعظم کون تھے؟", o: ["قائد اعظم", "لیاقت علی خان", "ایوب خان", "ذوالفقار علی بھٹو"], a: 1},
+            {q: "پاکستان کے پہلے صدر کون تھے؟", o: ["قائد اعظم", "اسکندر مرزا", "ایوب خان", "ضیاء الحق"], a: 1},
+            {q: "پاکستان کی قومی اسمبلی کی کل نشستیں کتنی ہیں؟", o: ["272", "342", "104", "400"], a: 1},
+            {q: "پاکستان کا سب سے بڑا ڈیم کون سا ہے؟", o: ["منگلا ڈیم", "تربیلا ڈیم", "وارسک ڈیم", "دیامر بھاشا"], a: 1},
+            {q: "پاکستان کا رقبہ کتنا ہے؟", o: ["796,096 مربع کلومیٹر", "881,913 مربع کلومیٹر", "900,000 مربع کلومیٹر", "600,000 مربع کلومیٹر"], a: 0},
+            {q: "قرآن پاک میں کتنی سورتیں ہیں؟", o: ["110", "114", "120", "130"], a: 1},
+            {q: "سب سے پہلے کون سی مسجد بنائی گئی؟", o: ["مسجد نبوی", "مسجد الحرام", "مسجد قباء", "مسجد اقصی"], a: 2},
+            {q: "قرآن پاک میں کتنے پارے ہیں؟", o: ["25", "30", "35", "40"], a: 1},
+            {q: "نبی کریم ﷺ کا تعلق کس قبیلے سے تھا؟", o: ["بنو ہاشم (قریش)", "بنو تمیم", "بنو اسد", "بنو مخزوم"], a: 0},
+            {q: "اسلام کے پانچ ارکان کون سے ہیں؟", o: ["نماز، روزہ، زکوٰۃ، حج، جہاد", "کلمہ، نماز، روزہ، زکوٰۃ، حج", "ایمان، نماز، صدقہ، حج، روزہ", "صرف نماز اور کلمہ"], a: 1},
+            {q: "پہلی وحی کہاں نازل ہوئی؟", o: ["مسجد نبوی", "غار حراء", "غار ثور", "مکہ مکرمہ"], a: 1},
+            {q: "کس نبی کو اللہ نے آگ سے بچایا؟", o: ["حضرت موسیٰؑ", "حضرت ابراہیمؑ", "حضرت عیسیٰؑ", "حضرت یوسفؑ"], a: 1},
+            {q: "جمعتہ المبارک کی نماز کے کتنے فرائض ہیں؟", o: ["4", "2", "6", "8"], a: 1},
+            {q: "سب سے پہلے اسلام کس نے قبول کیا؟", o: ["حضرت ابوبکرؓ", "حضرت علیؓ", "حضرت خدیجہؓ", "حضرت عمرؓ"], a: 2},
+            {q: "زکوٰۃ کب فرض ہوئی؟", o: ["1 ہجری", "2 ہجری", "3 ہجری", "5 ہجری"], a: 1},
+            {q: "روزہ کس ہجری میں فرض ہوا؟", o: ["2 ہجری", "3 ہجری", "4 ہجری", "5 ہجری"], a: 0},
+            {q: "حج کب فرض ہوا؟", o: ["8 ہجری", "9 ہجری", "10 ہجری", "2 ہجری"], a: 1},
+            {q: "حضرت محمد ﷺ کے کتنے بیٹے تھے؟", o: ["1", "2", "3", "4"], a: 2},
+            {q: "کون سی سورہ ہر نماز میں پڑھی جاتی ہے؟", o: ["سورہ اخلاص", "سورہ فاتحہ", "سورہ رحمن", "سورہ یسین"], a: 1},
+            {q: "اسلام میں پہلا مؤذن کون تھا؟", o: ["حضرت عمرؓ", "حضرت بلالؓ", "حضرت عثمانؓ", "حضرت علیؓ"], a: 1},
+            {q: "نظام شمسی کا سب سے بڑا سیارہ کون سا ہے؟", o: ["مریخ", "مشتری", "زمین", "زحل"], a: 1},
+            {q: "پانی کا کیمیکل فارمولا کیا ہے؟", o: ["CO2", "H2O", "O2", "NaCl"], a: 1},
+            {q: "انسان کا سب سے بڑا عضو کون سا ہے؟", o: ["دل", "جگر", "دماغ", "جلد"], a: 3},
+            {q: "روشنی کی رفتار کتنی ہے؟", o: ["100,000 کلومیٹر/سیکنڈ", "200,000 کلومیٹر/سیکنڈ", "300,000 کلومیٹر/سیکنڈ", "500,000 کلومیٹر/سیکنڈ"], a: 2},
+            {q: "زمین کا واحد قدرتی سیارہ کون سا ہے؟", o: ["سورج", "مریخ", "چاند", "وینس"], a: 2},
+            {q: "ڈی این اے کا مکمل نام کیا ہے؟", o: ["Ribonucleic Acid", "Deoxyribonucleic Acid", "Dinitric Acid", "Digital Acid"], a: 1},
+            {q: "انسانی دل ایک دن میں کتنی بار دھڑکتا ہے؟", o: ["50,000", "75,000", "100,000", "200,000"], a: 2},
+            {q: "سب سے ہلکی گیس کون سی ہے؟", o: ["آکسیجن", "نائٹروجن", "ہائیڈروجن", "ہیلیم"], a: 2},
+            {q: "آکسیجن دریافت کس نے کی؟", o: ["نیوٹن", "آئن اسٹائن", "جوزف پریسٹلے", "ایڈیسن"], a: 2},
+            {q: "سورج سے زمین تک روشنی پہنچنے میں کتنا وقت لگتا ہے؟", o: ["2 منٹ", "5 منٹ", "8 منٹ 20 سیکنڈ", "12 منٹ"], a: 2},
+            {q: "لاہور کا مشہور کھانا کیا ہے؟", o: ["بریانی", "نہاری/پائے", "سجی", "چاول"], a: 1},
+            {q: "کراچی کا پرانا نام کیا تھا؟", o: ["کولاچی", "لائل پور", "نیون کوٹ", "شاہجہان پور"], a: 0},
+            {q: "مینار پاکستان کہاں واقع ہے؟", o: ["اسلام آباد", "لاہور", "کراچی", "ملتان"], a: 1},
+            {q: "پشاور کا کون سا بازار مشہور ہے؟", o: ["انارکلی", "قصہ خوانی", "اردو بازار", "زینب مارکیٹ"], a: 1},
+            {q: "کوئٹہ کس صوبے کا دارالحکومت ہے؟", o: ["سندھ", "پنجاب", "بلوچستان", "KPK"], a: 2},
+            {q: "فیصل آباد کا پرانا نام کیا تھا؟", o: ["کولاچی", "لائل پور", "پٹنہ", "شاہ کوٹ"], a: 1},
+            {q: "ملتان کو کس چیز کا شہر کہا جاتا ہے؟", o: ["پھولوں کا", "صوفیاء کا", "کھیلوں کا", "روشنیوں کا"], a: 1},
+            {q: "سیالکوٹ کس چیز کے لیے مشہور ہے؟", o: ["کپڑے", "فرنیچر", "اسپورٹس گڈز", "برتن"], a: 2},
+            {q: "مری کس صوبے میں واقع ہے؟", o: ["پنجاب", "KPK", "سندھ", "گلگت"], a: 0},
+            {q: "گلگت بلتستان کا دارالحکومت کیا ہے؟", o: ["سکردو", "گلگت", "ہنزہ", "استور"], a: 1}
+        ];
+
+        const FAQS = [
+            {q: "How can I earn points?", a: "You can earn points by completing the daily quiz (5 points per correct answer) and referring friends (25 points)."},
+            {q: "What is a Prize Box?", a: "Once you collect 200 points, you can unlock a Prize Box which contains cash rewards ranging from $0.05 to $2.00."},
+            {q: "How to withdraw money?", a: "You need a minimum of $30.00 and 5 successful referrals to withdraw via JazzCash or EasyPaisa."},
+            {q: "Is there any fee?", a: "No, the platform is 100% free for everyone in Pakistan."},
+            {q: "How many quizzes per day?", a: "You can take 10 questions daily. The limit resets at midnight."},
+            {q: "Can I use multiple accounts?", a: "No, one account per device is allowed. Violations lead to a ban."},
+            {q: "How long does withdrawal take?", a: "Usually 24 to 72 hours after verification."},
+            {q: "Is my data safe?", a: "Yes, we prioritize user privacy and follow strict data protection policies."},
+            {q: "Why do I see ads?", a: "Ads help us keep the platform free and fund the prize pool for our users."},
+            {q: "How to refer friends?", a: "Go to the Referral page, copy your code, and share it on WhatsApp or social media."}
+        ];
+
+        const TRANSLATIONS = {
+            en: {
+                "nav-home": "Home", "nav-quiz": "Daily Quiz", "nav-box": "Prize Box", "nav-leader": "Leaderboard",
+                "nav-refer": "Refer & Earn", "nav-withdraw": "Withdraw", "nav-history": "History", "nav-faq": "FAQ",
+                "nav-about": "About", "hero-title": "Pakistan Prize Box", "hero-subtitle": "Apna Ilm Azmao, Inaam Jeeto!",
+                "stat-points": "Your Points", "stat-boxes": "Boxes Avail.", "stat-won": "Total Won", "stat-rank": "Today's Rank",
+                "box-progress-text": "Next Prize Box Progress", "open-box-btn": "OPEN PRIZE BOX", "quiz-title": "Daily Quiz",
+                "quiz-status-text": "Questions Completed: ", "start-quiz": "Start Earning", "refer-box-title": "Invite & Earn",
+                "refer-box-desc": "Earn 25 points for every friend who joins!", "refer-box-btn": "Invite Friends",
+                "quiz-h": "Daily Knowledge Quiz", "quiz-p": "Answer 10 questions correctly to earn points.",
+                "well-done": "Quiz Completed!", "score": "Score", "box-h": "Your Prize Box", "box-tap": "Tap the box to open!",
+                "congrats": "Congratulations!", "you-won": "You have won", "withdraw-h": "Withdraw Funds",
+                "curr-bal": "Available Balance", "withdraw-lock-msg": "⚠️ Withdrawal is locked. Requirements:",
+                "w-method": "Select Method", "w-account": "Account Number / IBAN", "w-submit": "Submit Withdrawal",
+                "refer-h": "Refer & Earn", "refer-p": "Share your code with friends and earn points.",
+                "your-code": "Your Referral Code", "copy-btn": "Copy Code", "refer-stats": "Your Referrals: ",
+                "leader-h": "Top Earners", "faq-h": "Frequently Asked Questions", "about-h": "About Pakistan Prize Box",
+                "history-h": "Points History"
+            },
+            ur: {
+                "nav-home": "ہوم", "nav-quiz": "روزانہ کوئز", "nav-box": "پرائز باکس", "nav-leader": "لیڈر بورڈ",
+                "nav-refer": "ریفرل", "nav-withdraw": "رقم نکلوائیں", "nav-history": "تاریخ", "nav-faq": "سوالات",
+                "nav-about": "ہمارے بارے میں", "hero-title": "پاکستان پرائز باکس", "hero-subtitle": "اپنا علم آزمائیں، انعام جیتیں!",
+                "stat-points": "آپ کے پوائنٹس", "stat-boxes": "باکس دستیاب", "stat-won": "کل جیت", "stat-rank": "آج کا رینک",
+                "box-progress-text": "اگلے پرائز باکس کی پیشرفت", "open-box-btn": "پرائز باکس کھولیں", "quiz-title": "روزانہ کوئز",
+                "quiz-status-text": "مکمل سوالات: ", "start-quiz": "کمانا شروع کریں", "refer-box-title": "دوستوں کو دعوت دیں",
+                "refer-box-desc": "ہر دوست کے جوائن کرنے پر 25 پوائنٹس کمائیں!", "refer-box-btn": "دوستوں کو بلائیں",
+                "quiz-h": "روزانہ علمی کوئز", "quiz-p": "پوائنٹس حاصل کرنے کے لیے 10 سوالات کے صحیح جواب دیں۔",
+                "well-done": "کوئز مکمل ہو گیا!", "score": "سکور", "box-h": "آپ کا پرائز باکس", "box-tap": "باکس کھولنے کے لیے ٹیپ کریں!",
+                "congrats": "مبارک ہو!", "you-won": "آپ نے جیتے ہیں", "withdraw-h": "رقم نکلوانا",
+                "curr-bal": "آپ کا بیلنس", "withdraw-lock-msg": "⚠️ ودڈرول لاک ہے۔ شرائط:",
+                "w-method": "طریقہ منتخب کریں", "w-account": "اکاؤنٹ نمبر یا IBAN", "w-submit": "رقم نکلوائیں",
+                "refer-h": "ریفر کریں اور کمائیں", "refer-p": "اپنا کوڈ دوستوں کے ساتھ شیئر کریں اور پوائنٹس حاصل کریں۔",
+                "your-code": "آپ کا ریفرل کوڈ", "copy-btn": "کاپی کریں", "refer-stats": "آپ کے ریفرل: ",
+                "leader-h": "نمایاں کھلاڑی", "faq-h": "عام سوالات", "about-h": "ہمارے بارے میں",
+                "history-h": "پوائنٹس کی تاریخ"
+            }
+        };
+
+        let state = {
+            points: 0,
+            balance: 0.0,
+            referrals: 0,
+            questionsDone: 0,
+            lastQuizDate: "",
+            boxes: 0,
+            lang: 'en',
+            history: [],
+            referCode: "PK-" + Math.floor(1000 + Math.random() * 9000)
+        };
+
+        // --- INITIALIZATION ---
+        function init() {
+            const savedState = localStorage.getItem('pk_prize_box_state');
+            if (savedState) {
+                state = JSON.parse(savedState);
+            } else {
+                addHistory("Welcome Bonus", 10);
+                state.points = 10;
+                save();
+            }
+
+            // Check Daily Reset
+            const today = new Date().toDateString();
+            if (state.lastQuizDate !== today) {
+                state.questionsDone = 0;
+                state.lastQuizDate = today;
+                save();
+            }
+
+            updateUI();
+            renderFAQ();
+            showPage('home');
+        }
+
+        function save() {
+            localStorage.setItem('pk_prize_box_state', JSON.stringify(state));
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('header-points').innerText = state.points;
+            document.getElementById('stat-p').innerText = state.points;
+            document.getElementById('stat-b').innerText = state.boxes;
+            document.getElementById('stat-w').innerText = state.balance.toFixed(2);
+            document.getElementById('draw-bal').innerText = state.balance.toFixed(2);
+            document.getElementById('quiz-done').innerText = state.questionsDone;
+            document.getElementById('refer-count').innerText = state.referrals;
+            document.getElementById('my-code').innerText = state.referCode;
+            
+            // Progress Logic
+            const progress = (state.points % 200) / 2;
+            document.getElementById('prog-bar').style.width = progress + "%";
+            document.getElementById('prog-val').innerText = (state.points % 200);
+
+            if (state.points >= 200) {
+                state.boxes = Math.floor(state.points / 200);
+                document.getElementById('main-box-btn').classList.remove('hidden');
+                document.getElementById('box-progress-section').classList.add('hidden');
+            } else {
+                document.getElementById('main-box-btn').classList.add('hidden');
+                document.getElementById('box-progress-section').classList.remove('hidden');
+            }
+
+            // Withdrawal Check
+            document.getElementById('req-refer').innerText = `5 Successful Referrals (Current: ${state.referrals})`;
+            document.getElementById('req-refer').style.color = state.referrals >= 5 ? "var(--green-primary)" : "white";
+            document.getElementById('req-money').style.color = state.balance >= 30 ? "var(--green-primary)" : "white";
+
+            if (state.referrals >= 5 && state.balance >= 30) {
+                document.getElementById('withdraw-locked').classList.add('hidden');
+                document.getElementById('withdraw-unlocked').classList.remove('hidden');
+            }
+
+            // Translation
+            const langData = TRANSLATIONS[state.lang];
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (langData[key]) el.innerText = langData[key];
+            });
+
+            document.body.className = state.lang === 'ur' ? 'rtl' : '';
+            document.getElementById('lang-toggle').innerText = state.lang === 'ur' ? 'English' : 'اردو';
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+            window.scrollTo(0, 0);
+            if(pageId === 'leaderboard') renderLeaderboard();
+            if(pageId === 'history') renderHistory();
+            toggleMenu(true);
+        }
+
+        function toggleMenu(forceClose = false) {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('overlay');
+            if (forceClose || menu.classList.contains('active')) {
+                menu.classList.remove('active');
+                overlay.style.display = 'none';
+            } else {
+                menu.classList.add('active');
+                overlay.style.display = 'block';
+            }
+        }
+
+        function toggleLanguage() {
+            state.lang = state.lang === 'en' ? 'ur' : 'en';
+            save();
+            toggleMenu(true);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+
+        function addHistory(title, pts) {
+            state.history.unshift({
+                title, 
+                points: pts, 
+                date: new Date().toLocaleTimeString()
+            });
+            if (state.history.length > 20) state.history.pop();
+        }
+
+        // --- QUIZ LOGIC ---
+        let currentQuizQuestions = [];
+        let quizIdx = 0;
+        let quizScore = 0;
+        let quizTimer;
+
+        function startQuiz() {
+            if (state.questionsDone >= 50) {
+                document.getElementById('quiz-limit-msg').classList.remove('hidden');
+                return;
+            }
+            
+            // Randomly pick 10 from available pool
+            currentQuizQuestions = [...QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, 10);
+            quizIdx = 0;
+            quizScore = 0;
+            
+            document.getElementById('quiz-intro').classList.add('hidden');
+            document.getElementById('quiz-play').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (quizIdx >= 10) {
+                finishQuiz();
+                return;
+            }
+
+            const q = currentQuizQuestions[quizIdx];
+            document.getElementById('q-text').innerText = q.q;
+            document.getElementById('q-count').innerText = `Question ${quizIdx + 1}/10`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            q.o.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index);
+                container.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(quizTimer);
+            let timeLeft = 15;
+            const bar = document.getElementById('timer-bar');
+            const text = document.getElementById('timer-text');
+            
+            quizTimer = setInterval(() => {
+                timeLeft--;
+                text.innerText = timeLeft + "s";
+                bar.style.width = (timeLeft / 15 * 100) + "%";
+                
+                if (timeLeft <= 5) bar.style.background = "#ff4444";
+                else bar.style.background = "var(--green-primary)";
+
+                if (timeLeft <= 0) {
+                    clearInterval(quizTimer);
+                    checkAnswer(-1); // Timeout
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(idx) {
+            clearInterval(quizTimer);
+            const q = currentQuizQuestions[quizIdx];
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            if (idx === q.a) {
+                quizScore++;
+                buttons[idx].classList.add('correct');
+                showToast(state.lang === 'ur' ? "✅ صحیح جواب! +5 پوائنٹس" : "✅ Correct! +5 Points");
+            } else {
+                if (idx !== -1) buttons[idx].classList.add('wrong');
+                buttons[q.a].classList.add('correct');
+            }
+
+            // Disable all
+            buttons.forEach(b => b.disabled = true);
+
+            setTimeout(() => {
+                quizIdx++;
+                loadQuestion();
+            }, 1500);
+        }
+
+        function finishQuiz() {
+            const pointsEarned = quizScore * 5;
+            state.points += pointsEarned;
+            state.questionsDone += 10;
+            addHistory("Quiz Points", pointsEarned);
+            save();
+
+            document.getElementById('quiz-play').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('hidden');
+            document.getElementById('final-score').innerText = quizScore;
+            document.getElementById('earned-pts').innerText = pointsEarned;
+            
+            if (quizScore >= 7) {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        // --- BOX LOGIC ---
+        function openBoxLogic() {
+            if (state.points < 200) {
+                showToast("Not enough points!");
+                return;
+            }
+
+            const box = document.getElementById('box-img');
+            box.classList.add('shake');
+            document.getElementById('box-instruction').innerText = "Opening...";
+
+            setTimeout(() => {
+                box.classList.remove('shake');
+                box.classList.add('glow');
+                box.innerText = "🎊";
+                
+                // Logic for prize
+                const rand = Math.random() * 100;
+                let win = 0.05;
+                if (rand < 3) win = 2.00;
+                else if (rand < 10) win = 1.00;
+                else if (rand < 20) win = 0.50;
+                else if (rand < 35) win = 0.25;
+                else if (rand < 60) win = 0.10;
+
+                state.balance += win;
+                state.points -= 200;
+                addHistory("Prize Box Win", win + "$");
+                save();
+
+                document.getElementById('box-instruction').classList.add('hidden');
+                document.getElementById('box-result').classList.remove('hidden');
+                document.getElementById('win-amount').innerText = win.toFixed(2);
+                
+                confetti({ particleCount: 150, spread: 100, colors: ['#F0B90B', '#ffffff'] });
+            }, 2000);
+        }
+
+        // --- REFERRAL & MISC ---
+        function copyReferral() {
+            const code = state.referCode;
+            navigator.clipboard.writeText(code);
+            showToast("Referral code copied!");
+            // Mock referral gain for demo
+            setTimeout(() => {
+                if(confirm("Demo: Pretend a friend joined using your code?")) {
+                    state.referrals++;
+                    state.points += 25;
+                    addHistory("Referral Bonus", 25);
+                    save();
+                }
+            }, 1000);
+        }
+
+        function shareWhatsApp() {
+            const text = `Join Pakistan Prize Box and earn daily rewards! Use my code: ${state.referCode}. Download now: https://pakistanprizebox.com`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+        }
+
+        function renderFAQ() {
+            const container = document.getElementById('faq-container');
+            FAQS.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'faq-item';
+                div.innerHTML = `
+                    <div class="faq-q" onclick="toggleFaq(${i})">
+                        <span>${item.q}</span>
+                        <span>+</span>
+                    </div>
+                    <div class="faq-a" id="faq-a-${i}">${item.a}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleFaq(i) {
+            const a = document.getElementById(`faq-a-${i}`);
+            a.style.display = (a.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+            if (state.history.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#666;">No history yet.</p>';
+                return;
+            }
+            state.history.forEach(h => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold">${h.title}</div>
+                        <div style="font-size:10px; color:#666">${h.date}</div>
+                    </div>
+                    <div style="color:var(--gold-accent); font-weight:bold">${h.points}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            container.innerHTML = '';
+            const mocks = [
+                {n: "Ahmed K***", p: 4500, w: 25.5},
+                {n: "Zainab R***", p: 4210, w: 18.0},
+                {n: "Bilal A***", p: 3800, w: 12.5},
+                {n: "Sara M***", p: 3500, w: 10.0},
+                {n: "Hamza S***", p: 3100, w: 8.5}
+            ];
+            
+            mocks.forEach((m, i) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center">
+                        <span class="rank">${i+1}</span>
+                        <span>${m.n}</span>
+                    </div>
+                    <div>${m.p} Pts | $${m.w}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function processWithdrawal() {
+            const acc = document.getElementById('w-account-input').value;
+            if (acc.length < 10) {
+                showToast("Please enter a valid account number");
+                return;
+            }
+            
+            showToast("Withdrawal Request Submitted!");
+            state.balance = 0;
+            addHistory("Withdrawal Request", "-$30.00");
+            save();
+            showPage('home');
+        }
+
+        // Bootstrap
+        window.onload = init;
+    </script>
+</body>
+</html>
